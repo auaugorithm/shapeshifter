@@ -1,0 +1,16 @@
+import { NextResponse } from "next/server";
+import { getAllProjects } from "@/lib/db";
+
+export async function GET() {
+  try {
+    const projects = getAllProjects();
+
+    return NextResponse.json({ projects });
+  } catch (error) {
+    console.error("Projects fetch error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch projects" },
+      { status: 500 }
+    );
+  }
+}
