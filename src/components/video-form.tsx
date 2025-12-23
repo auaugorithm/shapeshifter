@@ -15,6 +15,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Sparkles, Wand2 } from "lucide-react";
 import { VideoStyle } from "@/types";
+import { getApiHeaders } from "@/lib/api-keys";
 
 interface VideoFormProps {
   onScriptPreview?: (script: unknown) => void;
@@ -40,12 +41,16 @@ export function VideoForm({ onScriptPreview }: VideoFormProps) {
     try {
       const response = await fetch("/api/script", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getApiHeaders(),
+        },
         body: JSON.stringify({ topic, style }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate script preview");
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to generate script preview");
       }
 
       const data = await response.json();
@@ -69,12 +74,16 @@ export function VideoForm({ onScriptPreview }: VideoFormProps) {
     try {
       const response = await fetch("/api/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getApiHeaders(),
+        },
         body: JSON.stringify({ topic, style }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to start video generation");
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to start video generation");
       }
 
       const data = await response.json();

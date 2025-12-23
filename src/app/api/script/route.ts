@@ -14,11 +14,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = scriptRequestSchema.parse(body);
 
-    const script = await generateScript(
-      validatedData.topic,
-      validatedData.style as VideoStyle,
-      validatedData.duration
-    );
+    // Get API key from header or environment
+    const apiKey = request.headers.get("x-openrouter-key") || undefined;
+
+    const script = await generateScript({
+      topic: validatedData.topic,
+      style: validatedData.style as VideoStyle,
+      duration: validatedData.duration,
+      apiKey,
+    });
 
     return NextResponse.json({ script });
   } catch (error) {
@@ -31,8 +35,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const message = error instanceof Error ? error.message : "Failed to generate script";
     return NextResponse.json(
-      { error: "Failed to generate script" },
+      { error: message },
       { status: 500 }
     );
   }

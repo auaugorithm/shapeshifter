@@ -23,14 +23,44 @@ interface OpenRouterResponse {
   };
 }
 
+export interface GenerateScriptOptions {
+  topic: string;
+  style?: VideoStyle;
+  duration?: number;
+  apiKey?: string;
+}
+
+export async function generateScript(options: GenerateScriptOptions): Promise<Script>;
 export async function generateScript(
   topic: string,
+  style?: VideoStyle,
+  duration?: number,
+  apiKey?: string
+): Promise<Script>;
+export async function generateScript(
+  topicOrOptions: string | GenerateScriptOptions,
   style: VideoStyle = "energetic",
-  duration: number = 30
+  duration: number = 30,
+  apiKeyParam?: string
 ): Promise<Script> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    throw new Error("OPENROUTER_API_KEY is not configured");
+  // Handle both function signatures
+  let topic: string;
+  let apiKey: string | undefined;
+
+  if (typeof topicOrOptions === "object") {
+    topic = topicOrOptions.topic;
+    style = topicOrOptions.style || "energetic";
+    duration = topicOrOptions.duration || 30;
+    apiKey = topicOrOptions.apiKey;
+  } else {
+    topic = topicOrOptions;
+    apiKey = apiKeyParam;
+  }
+
+  // Use provided API key or fall back to environment variable
+  const finalApiKey = apiKey || process.env.OPENROUTER_API_KEY;
+  if (!finalApiKey) {
+    throw new Error("OpenRouter API key is required. Please configure it in settings.");
   }
 
   const prompt = buildScriptPrompt(topic, style, duration);
@@ -50,7 +80,7 @@ export async function generateScript(
   const response = await fetch(OPENROUTER_API_URL, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${finalApiKey}`,
       "Content-Type": "application/json",
       "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
       "X-Title": "UGC Video Creator",
@@ -105,16 +135,19 @@ export async function generateScript(
   }
 }
 
-export async function enhanceVisualPrompt(basicPrompt: string): Promise<string> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    throw new Error("OPENROUTER_API_KEY is not configured");
+export async function enhanceVisualPrompt(
+  basicPrompt: string,
+  apiKey?: string
+): Promise<string> {
+  const finalApiKey = apiKey || process.env.OPENROUTER_API_KEY;
+  if (!finalApiKey) {
+    return basicPrompt; // Fall back to original if no key
   }
 
   const response = await fetch(OPENROUTER_API_URL, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${finalApiKey}`,
       "Content-Type": "application/json",
       "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
       "X-Title": "UGC Video Creator",
